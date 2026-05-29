@@ -1,3 +1,5 @@
+""Demo Script""
+
 “I built an AI art mentor that works kind of like a real creative coach you would learn from one on one.”
 
 “People upload their sketches, and the system looks at things like anatomy, shading, perspective, and composition, then gives structured feedback that feels like an actual art teacher reviewing your work.”
