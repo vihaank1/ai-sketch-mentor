@@ -1,4 +1,4 @@
-""Demo Script""
+__Demo Script__
 
 “I built an AI art mentor that works kind of like a real creative coach you would learn from one on one.”
 
