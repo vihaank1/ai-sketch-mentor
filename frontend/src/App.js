@@ -6,11 +6,15 @@ import SkillBars from "./components/SkillBars";
 import ProgressDashboard from "./components/ProgressDashboard";
 
 function App() {
-
   // =====================
   // AUTH STATE
   // =====================
   const [user, setUser] = useState(null);
+
+  // =====================
+  // APP STATE
+  // =====================
+  const [started, setStarted] = useState(false);
 
   // =====================
   // INPUT STATE
@@ -27,36 +31,31 @@ function App() {
   // =====================
   const [result, setResult] = useState(null);
   const [challenge, setChallenge] = useState("");
-
   const [streak, setStreak] = useState(0);
 
   // =====================
-  // AUTH CHECK ON LOAD
+  // AUTH INIT
   // =====================
   useEffect(() => {
-    const getUser = async () => {
+    const init = async () => {
       const { data } = await supabase.auth.getUser();
       setUser(data?.user || null);
     };
 
-    getUser();
+    init();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_, session) => {
-        setUser(session?.user || null);
-      }
-    );
+    const { data } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user || null);
+    });
 
-    return () => listener.subscription.unsubscribe();
+    return () => data.subscription.unsubscribe();
   }, []);
 
   // =====================
-  // LOGIN (simple demo)
+  // AUTH
   // =====================
   const login = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google"
-    });
+    await supabase.auth.signInWithOAuth({ provider: "google" });
   };
 
   const logout = async () => {
@@ -65,14 +64,11 @@ function App() {
   };
 
   // =====================
-  // ANALYZE SKETCH
+  // ANALYZE
   // =====================
   const analyzeSketch = async () => {
     try {
-      if (!user) {
-        alert("Please login first");
-        return;
-      }
+      if (!user) return alert("Login required");
 
       const formData = new FormData();
 
@@ -97,9 +93,8 @@ function App() {
         setStreak(res.data.progress.streak);
       }
 
-    } catch (err) {
-      console.log(err);
-      alert("Backend error");
+    } catch (e) {
+      console.log(e);
     }
   };
 
@@ -112,106 +107,107 @@ function App() {
   };
 
   // =====================
-  // UI
+  // LANDING PAGE
+  // =====================
+  if (!started) {
+    return (
+      <div style={landing}>
+        <div style={glassHero}>
+          <h1 style={{ fontSize: 52 }}>AI Sketch Mentor</h1>
+          <p style={{ opacity: 0.7, fontSize: 18 }}>
+            A precision art feedback system that analyzes your drawings like a professional mentor.
+          </p>
+
+          <button style={cta} onClick={() => setStarted(true)}>
+            Get Started
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // =====================
+  // APP UI
   // =====================
   return (
     <div style={page}>
-
       {/* HEADER */}
       <div style={header}>
-        <h1 style={{ color: "#00ff99" }}>🎨 AI Sketch Mentor</h1>
+        <h1 style={{ fontSize: 22 }}>🎨 AI Sketch Mentor</h1>
 
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ display: "flex", gap: 10 }}>
           {user ? (
             <>
               <span style={badge}>{user.email}</span>
-              <button onClick={logout} style={btn}>Logout</button>
+              <button style={btn} onClick={logout}>Logout</button>
             </>
           ) : (
-            <button onClick={login} style={btn}>Login</button>
+            <button style={btn} onClick={login}>Login</button>
           )}
         </div>
       </div>
 
-      {/* BLOCK USER IF NOT LOGGED IN */}
       {!user ? (
-        <div style={card}>
-          <h2>Login required to continue</h2>
-        </div>
+        <div style={card}>Please login to continue</div>
       ) : (
         <>
-          {/* INPUT */}
+          {/* INPUT CARD */}
           <div style={card}>
-
             <input placeholder="Describe sketch" value={description}
               onChange={(e) => setDescription(e.target.value)} style={input} />
 
             <input placeholder="Goal" value={goal}
               onChange={(e) => setGoal(e.target.value)} style={input} />
 
-            <select value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value)} style={input}>
+            <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} style={input}>
               <option>beginner</option>
               <option>intermediate</option>
               <option>advanced</option>
             </select>
 
-            <select value={artStyle}
-              onChange={(e) => setArtStyle(e.target.value)} style={input}>
+            <select value={artStyle} onChange={(e) => setArtStyle(e.target.value)} style={input}>
               <option>Realism</option>
               <option>Manga</option>
               <option>Anime</option>
             </select>
 
-            <select value={mentorMode}
-              onChange={(e) => setMentorMode(e.target.value)} style={input}>
+            <select value={mentorMode} onChange={(e) => setMentorMode(e.target.value)} style={input}>
               <option value="supportive">Supportive</option>
               <option value="harsh">Harsh</option>
             </select>
 
-            <input type="file"
-              onChange={(e) => setImage(e.target.files[0])} />
+            <input type="file" onChange={(e) => setImage(e.target.files[0])} />
 
-            <div style={{ marginTop: 10 }}>
-              <button onClick={analyzeSketch} style={primaryBtn}>
-                Analyze
-              </button>
-
-              <button onClick={getChallenge} style={secondaryBtn}>
-                Daily Challenge
-              </button>
+            <div style={{ marginTop: 12 }}>
+              <button onClick={analyzeSketch} style={primaryBtn}>Analyze</button>
+              <button onClick={getChallenge} style={secondaryBtn}>Challenge</button>
             </div>
 
-            {challenge && (
-              <p style={{ color: "#ffd700" }}>{challenge}</p>
-            )}
-
+            {challenge && <p style={{ color: "#ffd700" }}>{challenge}</p>}
           </div>
 
           {/* RESULTS */}
           {result && (
             <div style={card}>
-
-              <h2>🧠 Critique</h2>
+              <h2>Insight Report</h2>
               <p>{result.critique}</p>
 
-              <h2>Strengths</h2>
+              <h3>Strengths</h3>
               {(result.strengths || []).map((s, i) => <p key={i}>• {s}</p>)}
 
-              <h2>Weaknesses</h2>
+              <h3>Weaknesses</h3>
               {(result.weaknesses || []).map((w, i) => <p key={i}>• {w}</p>)}
 
-              <h2>Next Step</h2>
+              <h3>Next Step</h3>
               <p>{result.next_step}</p>
 
-              <h2>Score</h2>
+              <h3>Score</h3>
               <p>{result.confidence_score}/100</p>
 
-              <h2>🔥 Streak: {streak}</h2>
+              <h3>🔥 Streak: {streak}</h3>
 
               <SkillBars progress={result?.progress || {}} />
               <ProgressDashboard progress={result?.progress || {}} />
-
             </div>
           )}
         </>
@@ -220,7 +216,36 @@ function App() {
   );
 }
 
-/* ===================== UI ===================== */
+/* =====================
+   STRIPE-STYLE UI SYSTEM
+===================== */
+
+const landing = {
+  height: "100vh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "radial-gradient(circle at top, #111, #000)"
+};
+
+const glassHero = {
+  padding: "60px",
+  borderRadius: "20px",
+  background: "rgba(255,255,255,0.05)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  backdropFilter: "blur(20px)",
+  textAlign: "center",
+  maxWidth: 600
+};
+
+const cta = {
+  marginTop: 20,
+  padding: "12px 24px",
+  background: "#00ff99",
+  border: "none",
+  borderRadius: "12px",
+  cursor: "pointer"
+};
 
 const page = {
   background: "#0b0b0b",
@@ -233,26 +258,34 @@ const page = {
 const header = {
   display: "flex",
   justifyContent: "space-between",
-  alignItems: "center"
+  alignItems: "center",
+  marginBottom: 20
 };
 
 const card = {
   background: "rgba(255,255,255,0.05)",
-  padding: "20px",
+  border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: "16px",
-  marginTop: "20px"
+  padding: "20px",
+  marginTop: "20px",
+  backdropFilter: "blur(10px)"
 };
 
 const input = {
   width: "100%",
   padding: "12px",
   marginBottom: "10px",
-  borderRadius: "10px"
+  borderRadius: "10px",
+  border: "none",
+  outline: "none"
 };
 
 const btn = {
   padding: "8px 14px",
-  borderRadius: "10px"
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.2)",
+  background: "transparent",
+  color: "white"
 };
 
 const primaryBtn = {
@@ -260,15 +293,15 @@ const primaryBtn = {
   padding: "10px 20px",
   borderRadius: "10px",
   border: "none",
-  marginRight: "10px"
+  marginRight: 10
 };
 
 const secondaryBtn = {
-  background: "#333",
+  background: "#222",
   color: "white",
   padding: "10px 20px",
   borderRadius: "10px",
-  border: "none"
+  border: "1px solid rgba(255,255,255,0.1)"
 };
 
 const badge = {
