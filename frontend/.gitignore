@@ -19,6 +19,7 @@ dist/
 # =========================
 # ENV FILES 
 # =========================
+backend/.env
 .env
 .env.*
 !.env.example
